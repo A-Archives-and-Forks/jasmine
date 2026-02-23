@@ -12,11 +12,38 @@ import 'ignore_upgrade_pop.dart';
 
 const repoOwnerUrl =
     "https://api.github.com/repos/ComicSparks/glxx/releases/tags/jasmine";
+const _releasesUrl = "https://github.com/OWNER/jasmine/releases";
 const _versionUrl =
     "https://api.github.com/repos/OWNER/jasmine/releases/latest";
 
 const _versionAssets = 'lib/assets/version.txt';
-RegExp _versionExp = RegExp(r"^v\d+\.\d+.\d+$");
+
+class _SemVer {
+  final int major;
+  final int minor;
+  final int patch;
+
+  const _SemVer(this.major, this.minor, this.patch);
+
+  static _SemVer? parse(String input) {
+    var src = input.trim();
+    if (src.startsWith('v')) {
+      src = src.substring(1);
+    }
+    final m = RegExp(r'^(\d+)\.(\d+)\.(\d+)').firstMatch(src);
+    if (m == null) return null;
+    return _SemVer(
+      int.parse(m.group(1)!),
+      int.parse(m.group(2)!),
+      int.parse(m.group(3)!),
+    );
+  }
+
+  @override
+  String toString() {
+    return '$major.$minor.$patch';
+  }
+}
 
 late String _version;
 String? _latestVersion;
@@ -78,12 +105,12 @@ Future manualCheckNewVersion(BuildContext context) async {
 }
 
 bool dirtyVersion() {
-  return !_versionExp.hasMatch(_version);
+  return _SemVer.parse(_version) == null;
 }
 
 // maybe exception
 Future _versionCheck() async {
-  if (_versionExp.hasMatch(_version)) {
+  if (_SemVer.parse(_version) != null) {
     var owner = jsonDecode(await methods.httpGet(repoOwnerUrl))["body"]
         .toString()
         .trim();
@@ -176,15 +203,60 @@ String formatDateTimeToDateTime(DateTime c) {
 var _display = true;
 
 void versionPop(BuildContext context) {
-  if (latestVersion != null && _display && !currentIgnoreUpgradePop()) {
+  final latest = latestVersion;
+  if (latest == null || !_display) {
+    return;
+  }
+
+  final force = _isForceUpgrade(currentVersion(), latest);
+  if (force) {
+    if (currentIgnoreUpgradePop()) {
+      return;
+    }
     _display = false;
-    TopConfirm.topConfirm(context, "发现新版本", "发现新版本 $latestVersion , 请到关于页面更新");
+    TopConfirm.topConfirm(
+      context,
+      "发现新版本",
+      "发现新版本 $latest，请立即更新后继续使用",
+      force: true,
+      primaryText: "去下载",
+      onPrimary: _openRelease,
+    );
+    return;
+  }
+
+  if (!currentIgnoreUpgradePop()) {
+    _display = false;
+    TopConfirm.topConfirm(context, "发现新版本", "发现新版本 $latest , 请到关于页面更新");
+  }
+}
+
+bool _isForceUpgrade(String current, String latest) {
+  final c = _SemVer.parse(current);
+  final l = _SemVer.parse(latest);
+  if (c == null || l == null) return false;
+  if (l.major != c.major) return true;
+  if (l.minor != c.minor) return true;
+  return false;
+}
+
+Future<void> _openRelease() async {
+  try {
+    final owner = jsonDecode(await methods.httpGet(repoOwnerUrl))["body"]
+        .toString()
+        .trim();
+    await openUrl(_releasesUrl.replaceAll("OWNER", owner));
+  } catch (_) {
+    // ignore
   }
 }
 
 class TopConfirm {
   static topConfirm(BuildContext context, String title, String message,
-      {Function()? afterIKnown}) {
+      {bool force = false,
+      String primaryText = "朕知道了",
+      Future<void> Function()? onPrimary,
+      Function()? afterIKnown}) {
     late OverlayEntry overlayEntry;
     overlayEntry = OverlayEntry(builder: (BuildContext context) {
       return LayoutBuilder(
@@ -206,35 +278,45 @@ class TopConfirm {
                   Expanded(child: Container()),
                   Container(
                     width: mq,
-                    child: Card(
-                      child: Column(
-                        children: [
-                          Container(height: 30),
-                          Text(
-                            title,
-                            style: const TextStyle(
-                              fontSize: 28,
-                            ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Column(
+                      children: [
+                        Container(height: 30),
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 28,
                           ),
-                          Container(height: 15),
-                          Text(
-                            message,
-                            style: const TextStyle(
-                              fontSize: 16,
-                            ),
+                        ),
+                        Container(height: 15),
+                        Text(
+                          message,
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 16,
                           ),
-                          Container(height: 25),
-                          MaterialButton(
-                            elevation: 0,
-                            color: Colors.grey.shade700.withOpacity(.1),
-                            onPressed: () {
+                        ),
+                        Container(height: 25),
+                        MaterialButton(
+                          elevation: 0,
+                          color: Colors.black.withOpacity(.1),
+                          onPressed: () {
+                            if (onPrimary != null) {
+                              onPrimary();
+                            }
+                            if (!force) {
                               overlayEntry.remove();
-                            },
-                            child: const Text("朕知道了"),
-                          ),
-                          Container(height: 30),
-                        ],
-                      ),
+                            }
+                            afterIKnown?.call();
+                          },
+                          child: Text(primaryText),
+                        ),
+                        Container(height: 30),
+                      ],
                     ),
                   ),
                   Expanded(child: Container()),
@@ -245,9 +327,7 @@ class TopConfirm {
         },
       );
     });
-    OverlayState? overlay = Overlay.of(context);
-    if (overlay != null) {
-      overlay.insert(overlayEntry);
-    }
+    final overlay = Overlay.of(context);
+    overlay.insert(overlayEntry);
   }
 }

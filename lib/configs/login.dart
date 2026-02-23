@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:event/event.dart';
 import 'package:flutter/material.dart';
+import 'package:jasmine/configs/daily_sign.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:jasmine/basic/commons.dart';
 import 'package:jasmine/basic/log.dart';
@@ -43,6 +44,7 @@ Future initLogin(BuildContext context) async {
     } else if (preLogin.preLogin) {
       _selfInfo = preLogin.selfInfo!;
       _loginState = LoginStatus.loginSuccess;
+      checkDailySignStatus(context);
       fav(context);
     } else {
       _loginState = LoginStatus.loginField;
@@ -149,6 +151,7 @@ Future login(String username, String password, BuildContext context) async {
     final selfInfo = await methods.login(username, password);
     _selfInfo = selfInfo;
     _loginState = LoginStatus.loginSuccess;
+    checkDailySignStatus(context);
     fav(context);
   } catch (e, st) {
     debugPrient("$e\n$st");

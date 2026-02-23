@@ -1,5 +1,3 @@
-/// 自动全屏
-
 import 'dart:io';
 
 import 'package:flutter/material.dart';

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:jasmine/configs/daily_sign.dart';
 import 'package:jasmine/configs/versions.dart';
 import 'package:jasmine/screens/browser_screen.dart';
 import 'package:jasmine/screens/comic_search_screen.dart';
@@ -39,7 +38,6 @@ class _AppScreenState extends State<AppScreen> {
     super.initState();
     Future.delayed(Duration.zero, () async {
       versionPop(context);
-      await checkDailySignStatus(context);
       versionEvent.subscribe(_versionSub);
     });
   }

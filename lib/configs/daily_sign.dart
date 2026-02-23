@@ -26,12 +26,12 @@ String dailySignStatusLabel() {
     case DailySignStatus.checking:
       return "检测中...";
     case DailySignStatus.signed:
-      return "已签到";
+      return "已打卡";
     case DailySignStatus.error:
-      return "签到失败";
+      return "打卡失败";
     case DailySignStatus.unchecked:
     default:
-      return "未检测签到";
+      return "未检测打卡";
   }
 }
 
@@ -45,7 +45,7 @@ Future<void> checkDailySignStatus(BuildContext context,
   try {
     final msg = await methods.daily(selfInfo.uid);
     if (toast) {
-      defaultToast(context, msg.isNotEmpty ? msg : "已签到");
+      defaultToast(context, msg.isNotEmpty ? msg : "已打卡");
     }
     _setDailySignStatus(DailySignStatus.signed);
   } catch (e, st) {
