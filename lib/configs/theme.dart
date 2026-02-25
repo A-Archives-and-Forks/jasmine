@@ -213,12 +213,14 @@ Future initTheme() async {
     SystemUiMode.edgeToEdge,
     overlays: SystemUiOverlay.values,
   );
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+  ));
   theme = await methods.loadProperty(_propertyName);
   if (theme == "") {
     theme = "0";
   }
   themeEvent.broadcast();
-  _reloadBarColor();
 }
 
 String themeName() {
@@ -233,63 +235,6 @@ Future chooseTheme(BuildContext context) async {
     await methods.saveProperty(_propertyName, choose);
     theme = choose;
     themeEvent.broadcast();
-    _reloadBarColor();
-  }
-}
-
-void reloadBarColor({bool op = false}) {
-  _reloadBarColor(op: op);
-}
-
-void _reloadBarColor({bool op = false}) {
-  if (op) {
-    switch (theme) {
-      case '0':
-        SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-          systemStatusBarContrastEnforced: true,
-          systemNavigationBarContrastEnforced: true,
-        ));
-        break;
-      case '1':
-        SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-          systemNavigationBarIconBrightness: Brightness.dark,
-          systemStatusBarContrastEnforced: true,
-          systemNavigationBarContrastEnforced: true,
-        ));
-        break;
-      case '2':
-        SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-          systemNavigationBarIconBrightness: Brightness.light,
-          systemStatusBarContrastEnforced: true,
-          systemNavigationBarContrastEnforced: true,
-        ));
-        break;
-    }
-  } else {
-    switch (theme) {
-      case '0':
-        SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-          systemStatusBarContrastEnforced: true,
-          systemNavigationBarContrastEnforced: true,
-        ));
-        break;
-      case '1':
-        SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-          systemNavigationBarColor: Colors.white,
-          systemNavigationBarIconBrightness: Brightness.dark,
-          systemStatusBarContrastEnforced: true,
-          systemNavigationBarContrastEnforced: true,
-        ));
-        break;
-      case '2':
-        SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-          systemNavigationBarColor: Colors.black87,
-          systemNavigationBarIconBrightness: Brightness.light,
-          systemStatusBarContrastEnforced: true,
-          systemNavigationBarContrastEnforced: true,
-        ));
-        break;
-    }
   }
 }
 
