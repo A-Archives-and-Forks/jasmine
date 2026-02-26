@@ -1,5 +1,4 @@
 import 'dart:async' show Future;
-import 'dart:convert';
 
 import 'package:event/event.dart';
 import 'package:flutter/material.dart';
@@ -10,11 +9,7 @@ import 'package:jasmine/basic/methods.dart';
 
 import 'ignore_upgrade_pop.dart';
 
-const repoOwnerUrl =
-    "https://api.github.com/repos/ComicSparks/glxx/releases/tags/jasmine";
-const _releasesUrl = "https://github.com/OWNER/jasmine/releases";
-const _versionUrl =
-    "https://api.github.com/repos/OWNER/jasmine/releases/latest";
+const _defaultDownloadUrl = "https://cdn.comicsparks.work/download/jasmine";
 
 const _versionAssets = 'lib/assets/version.txt';
 
@@ -30,7 +25,7 @@ class _SemVer {
     if (src.startsWith('v')) {
       src = src.substring(1);
     }
-    final m = RegExp(r'^(\d+)\.(\d+)\.(\d+)').firstMatch(src);
+    final m = RegExp(r'^(\d+)\.(\d+)\.(\d+)$').firstMatch(src);
     if (m == null) return null;
     return _SemVer(
       int.parse(m.group(1)!),
@@ -48,6 +43,7 @@ class _SemVer {
 late String _version;
 String? _latestVersion;
 String? _latestVersionInfo;
+String _downloadUrl = _defaultDownloadUrl;
 
 const _propertyName = "checkVersionPeriod";
 late int _period = -1;
@@ -85,6 +81,10 @@ String? latestVersionInfo() {
   return _latestVersionInfo;
 }
 
+String latestDownloadUrl() {
+  return _downloadUrl;
+}
+
 Future autoCheckNewVersion() {
   // if (!isPro) return Future.value();
   if (_period != 0) {
@@ -94,14 +94,14 @@ Future autoCheckNewVersion() {
   return _versionCheck();
 }
 
-Future manualCheckNewVersion(BuildContext context) async {
-  try {
-    defaultToast(context, "检查更新中");
-    await _versionCheck();
-    defaultToast(context, "检查更新成功");
-  } catch (e) {
-    defaultToast(context, "检查更新失败 : $e");
+int _compareSemVer(_SemVer local, _SemVer remote) {
+  if (remote.major != local.major) {
+    return remote.major.compareTo(local.major);
   }
+  if (remote.minor != local.minor) {
+    return remote.minor.compareTo(local.minor);
+  }
+  return remote.patch.compareTo(local.patch);
 }
 
 bool dirtyVersion() {
@@ -110,18 +110,29 @@ bool dirtyVersion() {
 
 // maybe exception
 Future _versionCheck() async {
-  if (_SemVer.parse(_version) != null) {
-    var owner = jsonDecode(await methods.httpGet(repoOwnerUrl))["body"]
-        .toString()
-        .trim();
-    var json = jsonDecode(
-        await methods.httpGet(_versionUrl.replaceAll("OWNER", owner)));
-    if (json["name"] != null) {
-      String latestVersion = (json["name"]);
-      if (latestVersion != _version) {
-        _latestVersion = latestVersion;
-        _latestVersionInfo = json["body"] ?? "";
+  final localSemVer = _SemVer.parse(_version);
+  if (localSemVer != null) {
+    final config = await methods.appConfig();
+    final remoteLatestVersion = config["latestVersion"]?.toString();
+    final remoteDownloadUrl = config["downloadUrl"]?.toString();
+    if (remoteDownloadUrl != null && remoteDownloadUrl.isNotEmpty) {
+      _downloadUrl = remoteDownloadUrl;
+    } else {
+      _downloadUrl = _defaultDownloadUrl;
+    }
+    if (remoteLatestVersion != null && remoteLatestVersion.isNotEmpty) {
+      final remoteSemVer = _SemVer.parse(remoteLatestVersion);
+      if (remoteSemVer != null &&
+          _compareSemVer(localSemVer, remoteSemVer) > 0) {
+        _latestVersion = remoteLatestVersion;
+        _latestVersionInfo = "";
+      } else {
+        _latestVersion = null;
+        _latestVersionInfo = null;
       }
+    } else {
+      _latestVersion = null;
+      _latestVersionInfo = null;
     }
   } // else dirtyVersion
   versionEvent.broadcast();
@@ -242,10 +253,7 @@ bool _isForceUpgrade(String current, String latest) {
 
 Future<void> _openRelease() async {
   try {
-    final owner = jsonDecode(await methods.httpGet(repoOwnerUrl))["body"]
-        .toString()
-        .trim();
-    await openUrl(_releasesUrl.replaceAll("OWNER", owner));
+    await openUrl(latestDownloadUrl());
   } catch (_) {
     // ignore
   }

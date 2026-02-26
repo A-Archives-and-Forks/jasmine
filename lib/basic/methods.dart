@@ -56,6 +56,15 @@ class Methods {
     return decoded.map((key, value) => MapEntry("$key", "$value"));
   }
 
+  Future<Map<String, dynamic>> appConfig() async {
+    final rsp = await _invoke("app_config", "");
+    final decoded = jsonDecode(rsp);
+    if (decoded is! Map) {
+      return {};
+    }
+    return Map<String, dynamic>.from(decoded);
+  }
+
   Future<String> loadProperty(String propertyKey) {
     return _invoke("load_property", propertyKey);
   }

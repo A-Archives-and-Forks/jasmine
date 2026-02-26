@@ -1,16 +1,7 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:jasmine/basic/commons.dart';
-import 'package:jasmine/configs/android_display_mode.dart';
-import 'package:jasmine/configs/proxy.dart';
 import 'package:jasmine/configs/versions.dart';
 import 'package:jasmine/screens/components/badge.dart';
-
-import '../basic/methods.dart';
-import '../configs/is_pro.dart';
-import '../configs/theme.dart';
-import '../configs/using_right_click_pop.dart';
 import 'components/right_click_pop.dart';
 
 class AboutScreen extends StatefulWidget {
@@ -97,15 +88,7 @@ class _AboutState extends State<AboutScreen> {
       child: Text.rich(TextSpan(
         children: [
           const TextSpan(text: "最新版本 : "),
-          // if (isPro)
           _buildNewestVersionSpan(),
-          // if (isPro)
-          _buildCheckButton(),
-          // if (!isPro)
-          //   const TextSpan(
-          //     text: "请前往官网获取最新版本",
-          //     style: TextStyle(color: Colors.grey),
-          //   ),
         ],
       )),
     );
@@ -124,24 +107,6 @@ class _AboutState extends State<AboutScreen> {
     );
   }
 
-  InlineSpan _buildCheckButton() {
-    return WidgetSpan(
-      child: GestureDetector(
-        child: const Text(
-          "检查更新",
-          style: TextStyle(height: 1.3, color: Colors.blue),
-          strutStyle: StrutStyle(height: 1.3),
-        ),
-        onTap: () async {
-          await manualCheckNewVersion(context);
-          setState(() {});
-        },
-      ),
-    );
-  }
-
-  final repoOwnerUrl = "https://api.github.com/repos/ComicSparks/glxx/releases/tags/jasmine";
-
   Widget _buildGotoGithub() {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
@@ -151,8 +116,7 @@ class _AboutState extends State<AboutScreen> {
           style: TextStyle(color: Colors.blue),
         ),
         onTap: () async {
-          var owner = jsonDecode(await methods.httpGet(repoOwnerUrl))["body"].toString().trim();
-          openUrl("https://github.com/$owner/jasmine/releases/");
+          await openUrl(latestDownloadUrl());
         },
       ),
     );
