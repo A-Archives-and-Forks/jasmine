@@ -18,6 +18,7 @@ import '../configs/android_display_mode.dart';
 import '../configs/categories_sort.dart';
 import '../configs/display_jmcode.dart';
 import '../configs/download_and_export_to.dart';
+import '../configs/esc_to_pop.dart';
 import '../configs/disable_recommend_content.dart';
 import '../configs/export_rename.dart';
 import '../configs/ignore_upgrade_pop.dart';
@@ -142,6 +143,7 @@ class _SettingsState extends State<SettingsScreen> {
                 androidDisplayModeSetting(),
                 const Divider(),
                 usingRightClickPopSetting(),
+                escToPopSetting(),
                 const Divider(),
                 authenticationSetting(),
                 const Divider(),

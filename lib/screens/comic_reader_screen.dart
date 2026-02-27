@@ -153,9 +153,33 @@ class _ComicReaderScreenState extends State<ComicReaderScreen> {
             fullScreenOnInit: widget.fullScreenOnInit,
           ),
         );
-        return readerKeyboardHolder(screen);
+        return _readerKeyboardHolder(screen);
       },
     );
+  }
+
+  Widget _readerKeyboardHolder(Widget widget) {
+    if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+      widget = Focus(
+        autofocus: true,
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent) {
+            if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+              _readerControllerEvent.broadcast(_ReaderControllerEventArgs("UP"));
+              return KeyEventResult.handled;
+            }
+            if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+              _readerControllerEvent
+                  .broadcast(_ReaderControllerEventArgs("DOWN"));
+              return KeyEventResult.handled;
+            }
+          }
+          return KeyEventResult.ignored;
+        },
+        child: widget,
+      );
+    }
+    return widget;
   }
 }
 
@@ -188,28 +212,6 @@ void delVolumeListen() {
   if (_volumeListenCount == 0) {
     volumeS?.cancel();
   }
-}
-
-Widget readerKeyboardHolder(Widget widget) {
-  if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
-    widget = RawKeyboardListener(
-      focusNode: FocusNode(),
-      child: widget,
-      autofocus: true,
-      onKey: (event) {
-        if (event is RawKeyDownEvent) {
-          if (event.isKeyPressed(LogicalKeyboardKey.arrowUp)) {
-            _readerControllerEvent.broadcast(_ReaderControllerEventArgs("UP"));
-          }
-          if (event.isKeyPressed(LogicalKeyboardKey.arrowDown)) {
-            _readerControllerEvent
-                .broadcast(_ReaderControllerEventArgs("DOWN"));
-          }
-        }
-      },
-    );
-  }
-  return widget;
 }
 
 ////////////////////////////////
