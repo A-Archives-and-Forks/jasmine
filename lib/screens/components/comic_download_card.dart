@@ -106,8 +106,8 @@ class ComicDownloadCard extends StatelessWidget {
     return Container();
   }
 
-  List<Widget> _c(ComicSimpleCategory category) {
-    if (category.title == null) {
+  List<Widget> _c(ComicSimpleCategory? category) {
+    if (category == null || category.title == null) {
       return [];
     }
     return [

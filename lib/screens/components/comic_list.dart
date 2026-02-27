@@ -33,6 +33,88 @@ class ComicList extends StatefulWidget {
 }
 
 class _ComicListState extends State<ComicList> {
+  bool _isSealed(ComicBasic comic) {
+    return comic is ComicSimple && comic.sealed;
+  }
+
+  Widget _buildSealedCoverPlaceholder({required BoxConstraints constraints}) {
+    return Container(
+      color: Colors.black12,
+      child: Center(
+        child: Icon(
+          Icons.visibility_off_outlined,
+          color: Colors.grey.shade600,
+          size: 26,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCoverByRate({
+    required ComicBasic comic,
+    required BoxConstraints constraints,
+    required int index,
+  }) {
+    if (_isSealed(comic)) {
+      return _buildSealedCoverPlaceholder(constraints: constraints);
+    }
+    switch (currentPagerCoverRate) {
+      case PagerCoverRate.rate3x4:
+        return JM3x4Cover(
+          comicId: comic.id,
+          width: constraints.maxWidth,
+          height: constraints.maxHeight,
+          longPressMenuItems: _longPressImageCallback(index),
+        );
+      case PagerCoverRate.rateSquare:
+        return JMSquareCover(
+          comicId: comic.id,
+          width: constraints.maxWidth,
+          height: constraints.maxHeight,
+          longPressMenuItems: _longPressImageCallback(index),
+        );
+    }
+  }
+
+  Widget _buildInfoCard(ComicBasic comic) {
+    if (_isSealed(comic)) {
+      return Container(
+        padding: const EdgeInsets.only(top: 5, bottom: 5, left: 10, right: 10),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: Theme.of(context).dividerColor,
+            ),
+          ),
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 100 * 3 / 4,
+              height: 100,
+              child: Card(
+                shape: coverShape,
+                clipBehavior: Clip.antiAlias,
+                child: _buildSealedCoverPlaceholder(
+                  constraints: const BoxConstraints(),
+                ),
+              ),
+            ),
+            Container(width: 10),
+            Expanded(
+              child: Text(
+                comic.name,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return ComicInfoCard(comic);
+  }
+
   @override
   void initState() {
     currentPagerViewModeEvent.subscribe(_setState);
@@ -70,32 +152,24 @@ class _ComicListState extends State<ComicList> {
   Widget _buildCoverMode() {
     List<Widget> widgets = [];
     for (var i = 0; i < widget.data.length; i++) {
+      final sealed = _isSealed(widget.data[i]);
       widgets.add(GestureDetector(
-        onTap: () {
-          _pushToComicInfo(widget.data[i]);
-        },
-        onLongPress: _longPressCallback(i),
+        onTap: sealed
+            ? null
+            : () {
+                _pushToComicInfo(widget.data[i]);
+              },
+        onLongPress: sealed ? null : _longPressCallback(i),
         child: Card(
           shape: coverShape,
           clipBehavior: Clip.antiAlias,
           child: LayoutBuilder(
             builder: (BuildContext context, BoxConstraints constraints) {
-              switch (currentPagerCoverRate) {
-                case PagerCoverRate.rate3x4:
-                  return JM3x4Cover(
-                    comicId: widget.data[i].id,
-                    width: constraints.maxWidth,
-                    height: constraints.maxHeight,
-                    longPressMenuItems: _longPressImageCallback(i),
-                  );
-                case PagerCoverRate.rateSquare:
-                  return JMSquareCover(
-                    comicId: widget.data[i].id,
-                    width: constraints.maxWidth,
-                    height: constraints.maxHeight,
-                    longPressMenuItems: _longPressImageCallback(i),
-                  );
-              }
+              return _buildCoverByRate(
+                comic: widget.data[i],
+                constraints: constraints,
+                index: i,
+              );
             },
           ),
         ),
@@ -148,12 +222,15 @@ class _ComicListState extends State<ComicList> {
   Widget _buildInfoMode() {
     List<Widget> widgets = [];
     for (var i = 0; i < widget.data.length; i++) {
+      final sealed = _isSealed(widget.data[i]);
       widgets.add(GestureDetector(
-        onTap: () {
-          _pushToComicInfo(widget.data[i]);
-        },
-        onLongPress: _longPressCallback(i),
-        child: ComicInfoCard(widget.data[i]),
+        onTap: sealed
+            ? null
+            : () {
+                _pushToComicInfo(widget.data[i]);
+              },
+        onLongPress: sealed ? null : _longPressCallback(i),
+        child: _buildInfoCard(widget.data[i]),
       ));
     }
     if (widget.appendList != null) {
@@ -180,34 +257,23 @@ class _ComicListState extends State<ComicList> {
   Widget _buildTitleInCoverMode() {
     List<Widget> widgets = [];
     for (var i = 0; i < widget.data.length; i++) {
+      final sealed = _isSealed(widget.data[i]);
       widgets.add(GestureDetector(
-        onTap: () {
-          _pushToComicInfo(widget.data[i]);
-        },
+        onTap: sealed
+            ? null
+            : () {
+                _pushToComicInfo(widget.data[i]);
+              },
         child: Card(
           shape: coverShape,
           clipBehavior: Clip.antiAlias,
           child: LayoutBuilder(
             builder: (BuildContext context, BoxConstraints constraints) {
-              late final Widget image;
-              switch (currentPagerCoverRate) {
-                case PagerCoverRate.rate3x4:
-                  image = JM3x4Cover(
-                    comicId: widget.data[i].id,
-                    width: constraints.maxWidth,
-                    height: constraints.maxHeight,
-                    longPressMenuItems: _longPressImageCallback(i),
-                  );
-                  break;
-                case PagerCoverRate.rateSquare:
-                  image = JMSquareCover(
-                    comicId: widget.data[i].id,
-                    width: constraints.maxWidth,
-                    height: constraints.maxHeight,
-                    longPressMenuItems: _longPressImageCallback(i),
-                  );
-                  break;
-              }
+              final image = _buildCoverByRate(
+                comic: widget.data[i],
+                constraints: constraints,
+                index: i,
+              );
               return Stack(
                 children: [
                   image,
@@ -296,11 +362,14 @@ class _ComicListState extends State<ComicList> {
     }
     List<Widget> widgets = [];
     for (var i = 0; i < widget.data.length; i++) {
+      final sealed = _isSealed(widget.data[i]);
       widgets.add(GestureDetector(
-        onTap: () {
-          _pushToComicInfo(widget.data[i]);
-        },
-        onLongPress: _longPressCallback(i),
+        onTap: sealed
+            ? null
+            : () {
+                _pushToComicInfo(widget.data[i]);
+              },
+        onLongPress: sealed ? null : _longPressCallback(i),
         child: Column(
           children: [
             SizedBox(
@@ -311,26 +380,11 @@ class _ComicListState extends State<ComicList> {
                 clipBehavior: Clip.antiAlias,
                 child: LayoutBuilder(
                   builder: (BuildContext context, BoxConstraints constraints) {
-                    late final Widget image;
-                    switch (currentPagerCoverRate) {
-                      case PagerCoverRate.rate3x4:
-                        image = JM3x4Cover(
-                          comicId: widget.data[i].id,
-                          width: constraints.maxWidth,
-                          height: constraints.maxHeight,
-                          longPressMenuItems: _longPressImageCallback(i),
-                        );
-                        break;
-                      case PagerCoverRate.rateSquare:
-                        image = JMSquareCover(
-                          comicId: widget.data[i].id,
-                          width: constraints.maxWidth,
-                          height: constraints.maxHeight,
-                          longPressMenuItems: _longPressImageCallback(i),
-                        );
-                        break;
-                    }
-                    return image;
+                    return _buildCoverByRate(
+                      comic: widget.data[i],
+                      constraints: constraints,
+                      index: i,
+                    );
                   },
                 ),
               ),

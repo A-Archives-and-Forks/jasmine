@@ -106,28 +106,30 @@ class ComicSimple extends ComicBasic {
     required String description,
     required String name,
     required String image,
-    required this.category,
-    required this.categorySub,
+    required ComicSimpleCategory category,
+    required ComicSimpleCategory categorySub,
+    int? updateAt,
+    this.sealed = false,
   }) : super(
             id: id,
             author: author,
             description: description,
             name: name,
-            image: image);
+            image: image,
+            category: category,
+            categorySub: categorySub,
+            updateAt: updateAt);
 
-  late final ComicSimpleCategory category;
-  late final ComicSimpleCategory categorySub;
+  bool sealed = false;
 
   ComicSimple.fromJson(Map<String, dynamic> json) : super.fromJson(json) {
-    category = ComicSimpleCategory.fromJson(json['category']);
-    categorySub = ComicSimpleCategory.fromJson(json['category_sub']);
+    sealed = json['sealed'] == true;
   }
 
   @override
   Map<String, dynamic> toJson() {
     final _data = super.toJson();
-    _data['category'] = category.toJson();
-    _data['category_sub'] = categorySub.toJson();
+    _data['sealed'] = sealed;
     return _data;
   }
 }
@@ -142,8 +144,8 @@ class ComicSimpleCategory {
   late final String? title;
 
   ComicSimpleCategory.fromJson(Map<String, dynamic> json) {
-    id = null;
-    title = null;
+    id = json['id'] == null ? null : "${json['id']}";
+    title = json['title'] == null ? null : "${json['title']}";
   }
 
   Map<String, dynamic> toJson() {
@@ -343,6 +345,9 @@ class ComicBasic {
     required this.description,
     required this.name,
     required this.image,
+    this.updateAt,
+    this.category,
+    this.categorySub,
   });
 
   late final int id;
@@ -350,13 +355,23 @@ class ComicBasic {
   late final String description;
   late final String name;
   late final String image;
+  late final int? updateAt;
+  late final ComicSimpleCategory? category;
+  late final ComicSimpleCategory? categorySub;
 
   ComicBasic.fromJson(Map<String, dynamic> json) {
     id = json['id'];
-    author = json['author'];
-    description = json['description'];
-    name = json['name'];
-    image = json['image'];
+    author = json['author'] ?? "";
+    description = json['description'] ?? "";
+    name = json['name'] ?? "";
+    image = json['image'] ?? "";
+    updateAt = json['update_at'];
+    category = json['category'] is Map<String, dynamic>
+        ? ComicSimpleCategory.fromJson(json['category'])
+        : null;
+    categorySub = json['category_sub'] is Map<String, dynamic>
+        ? ComicSimpleCategory.fromJson(json['category_sub'])
+        : null;
   }
 
   Map<String, dynamic> toJson() {
@@ -366,6 +381,9 @@ class ComicBasic {
     _data['description'] = description;
     _data['name'] = name;
     _data['image'] = image;
+    _data['update_at'] = updateAt;
+    _data['category'] = category?.toJson();
+    _data['category_sub'] = categorySub?.toJson();
     return _data;
   }
 }

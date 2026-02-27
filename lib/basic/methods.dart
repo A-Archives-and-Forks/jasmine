@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
+import 'package:jasmine/basic/comic_seal.dart';
 import 'package:jasmine/basic/log.dart';
 
 import 'entities.dart';
@@ -75,7 +76,11 @@ class Methods {
       "sort_by": sortBy.value,
       "page": page,
     });
-    return ComicsResponse.fromJson(jsonDecode(rsp));
+    final response = ComicsResponse.fromJson(jsonDecode(rsp));
+    for (final comic in response.content) {
+      comic.sealed = matchComicSealedByRules(comic);
+    }
+    return response;
   }
 
   Future<ComicsResponse> comicSearch(
@@ -88,7 +93,11 @@ class Methods {
       "sort_by": sortBy.value,
       "page": page,
     });
-    return ComicsResponse.fromJson(jsonDecode(rsp));
+    final response = ComicsResponse.fromJson(jsonDecode(rsp));
+    for (final comic in response.content) {
+      comic.sealed = matchComicSealedByRules(comic);
+    }
+    return response;
   }
 
   Future<ComicsResponse> pageViewLog(int page) async {

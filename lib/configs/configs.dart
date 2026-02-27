@@ -8,6 +8,7 @@ import 'package:jasmine/configs/app_orientation.dart';
 import 'package:jasmine/configs/display_jmcode.dart';
 import 'package:jasmine/configs/download_thread_count.dart';
 import 'package:jasmine/configs/drag_region_lock.dart';
+import 'package:jasmine/configs/comic_seal.dart';
 import 'package:jasmine/configs/esc_to_pop.dart';
 import 'package:jasmine/configs/gesture_speed.dart';
 import 'package:jasmine/configs/no_animation.dart';
@@ -76,6 +77,7 @@ Future initConfigs(BuildContext context) async {
   await initProxy();
   await initUsingRightClickPop();
   await initEscToPop();
+  await initComicSealConfig();
   await initWebDavSyncSwitch();
   await initWebDavUrl();
   await initWebDavUserName();

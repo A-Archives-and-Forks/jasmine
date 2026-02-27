@@ -109,6 +109,16 @@ class ComicInfoCard extends StatelessWidget {
                     : Text(comic.author, style: authorStyle),
                 Container(height: 4),
                 _buildCategoryRow(),
+                if (comic.updateAt != null) ...[
+                  Container(height: 4),
+                  Text(
+                    _formatUpdateAt(comic.updateAt!),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).textTheme.bodySmall?.color,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -118,26 +128,29 @@ class ComicInfoCard extends StatelessWidget {
   }
 
   Widget _buildCategoryRow() {
-    if (comic is ComicSimple) {
-      var _comic = comic as ComicSimple;
-      return Row(
-        children: [
-          ..._c(_comic.category),
-          ..._c(_comic.categorySub),
-        ],
-      );
+    final category = comic.category;
+    final categorySub = comic.categorySub;
+    final categoryTitle = category?.title;
+    final categorySubTitle = categorySub?.title;
+    if ((categoryTitle == null || categoryTitle.isEmpty) &&
+        (categorySubTitle == null || categorySubTitle.isEmpty)) {
+      return Container();
     }
-    return Container();
-  }
-
-  List<Widget> _c(ComicSimpleCategory category) {
-    if (category.title == null) {
-      return [];
+    late final String text;
+    if (categoryTitle != null && categoryTitle.isNotEmpty) {
+      if (categorySubTitle != null && categorySubTitle.isNotEmpty) {
+        text = "$categoryTitle > $categorySubTitle";
+      } else {
+        text = categoryTitle;
+      }
+    } else {
+      text = categorySubTitle!;
     }
-    return [
-      Text(category.title!),
-      Container(width: 15),
-    ];
+    return Text(
+      text,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
   }
 
   List<TextSpan> titleProcess(String name, BuildContext context) {
@@ -199,5 +212,15 @@ class ComicInfoCard extends StatelessWidget {
       result.add(TextSpan(text: name.substring(start)));
     }
     return result;
+  }
+
+  String _formatUpdateAt(int updateAt) {
+    final milliseconds = updateAt > 1000000000000 ? updateAt : updateAt * 1000;
+    final dt = DateTime.fromMillisecondsSinceEpoch(milliseconds);
+    final month = dt.month.toString().padLeft(2, '0');
+    final day = dt.day.toString().padLeft(2, '0');
+    final hour = dt.hour.toString().padLeft(2, '0');
+    final minute = dt.minute.toString().padLeft(2, '0');
+    return "更新: ${dt.year}-$month-$day $hour:$minute";
   }
 }
