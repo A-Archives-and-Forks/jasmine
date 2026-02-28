@@ -48,6 +48,10 @@ class Methods {
     return _invoke("init_dart", "");
   }
 
+  Future init2() {
+    return _invoke("init_dart2", "");
+  }
+
   Future<Map<String, String>> configLinks() async {
     final rsp = await _invoke("config_links", "");
     final decoded = jsonDecode(rsp);
