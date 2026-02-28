@@ -1,6 +1,12 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:jasmine/basic/methods.dart';
 import 'package:jasmine/configs/app_font_size.dart';
 import 'package:jasmine/configs/app_orientation.dart';
@@ -50,6 +56,132 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsState extends State<SettingsScreen> {
+  bool _startupImageExists = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStartupImageState();
+  }
+
+  Future<void> _loadStartupImageState() async {
+    try {
+      final startupImagePath = await methods.getStartupImagePath();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _startupImageExists = startupImagePath.isNotEmpty;
+      });
+    } catch (_) {}
+  }
+
+  Future<String> _renderPngBase64WithinScreen(
+    Uint8List imageBytes,
+    Size screenSize,
+  ) async {
+    final codec = await ui.instantiateImageCodec(imageBytes);
+    final frameInfo = await codec.getNextFrame();
+    final srcImage = frameInfo.image;
+    final srcWidth = srcImage.width.toDouble();
+    final srcHeight = srcImage.height.toDouble();
+
+    final scale = math.min(
+      math.min(screenSize.width / srcWidth, screenSize.height / srcHeight),
+      1.0,
+    );
+    final targetWidth = math.max(1, (srcWidth * scale).round());
+    final targetHeight = math.max(1, (srcHeight * scale).round());
+
+    final resizedCodec = await ui.instantiateImageCodec(
+      imageBytes,
+      targetWidth: targetWidth,
+      targetHeight: targetHeight,
+    );
+    final resizedFrame = await resizedCodec.getNextFrame();
+    final pngData = await resizedFrame.image.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
+    if (pngData == null) {
+      throw StateError("图片编码失败");
+    }
+    return base64Encode(pngData.buffer.asUint8List());
+  }
+
+  Future<void> _pickAndSaveStartupImage(BuildContext context) async {
+    try {
+      Uint8List? imageBytes;
+      if (Platform.isAndroid || Platform.isIOS) {
+        final picker = ImagePicker();
+        final picked = await picker.pickImage(source: ImageSource.gallery);
+        if (picked == null) {
+          return;
+        }
+        imageBytes = await picked.readAsBytes();
+      } else {
+        final picked = await FilePicker.platform.pickFiles(
+          dialogTitle: "选择启动图",
+          type: FileType.custom,
+          allowedExtensions: ["png", "jpg", "jpeg", "bmp", "webp"],
+        );
+        if (picked == null || picked.files.isEmpty) {
+          return;
+        }
+        final file = picked.files.first;
+        if (file.bytes != null) {
+          imageBytes = file.bytes!;
+        } else if (file.path != null) {
+          imageBytes = await File(file.path!).readAsBytes();
+        }
+      }
+
+      if (imageBytes == null) {
+        defaultToast(context, "未读取到图片");
+        return;
+      }
+
+      final size = MediaQuery.of(context).size;
+      final base64Data = await _renderPngBase64WithinScreen(imageBytes, size);
+      await methods.saveStartupImage(base64Data);
+      defaultToast(context, _startupImageExists ? "替换启动图成功" : "设置启动图成功");
+      await _loadStartupImageState();
+    } catch (e) {
+      defaultToast(context, "设置启动图失败 : $e");
+      print("设置启动图失败 : $e");
+    }
+  }
+
+  Future<void> _deleteStartupImage(BuildContext context) async {
+    if (!await confirmDialog(context, "删除启动图", "确定删除当前启动图吗?")) {
+      return;
+    }
+    try {
+      await methods.deleteStartupImage();
+      defaultToast(context, "删除启动图成功");
+      await _loadStartupImageState();
+    } catch (e) {
+      defaultToast(context, "删除启动图失败 : $e");
+    }
+  }
+
+  Widget _startupImageSettingTile(BuildContext context) {
+    return ListTile(
+      onTap: () async {
+        await _pickAndSaveStartupImage(context);
+      },
+      title: Text(_startupImageExists ? "替换启动图" : "设置启动图"),
+    );
+  }
+
+  Widget _deleteStartupImageTile(BuildContext context) {
+    return ListTile(
+      onTap: () async {
+        await _deleteStartupImage(context);
+      },
+      title: const Text("删除启动图"),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return rightClickPop(child: buildScreen(context), context: context);
@@ -126,6 +258,9 @@ class _SettingsState extends State<SettingsScreen> {
               leading: Icon(Icons.ad_units),
               title: Text('系统和应用程序'),
               children: [
+                _startupImageSettingTile(context),
+                if (_startupImageExists) _deleteStartupImageTile(context),
+                const Divider(),
                 disableRecommendContentSetting(),
                 if (isPro) ...[
                   const Divider(),

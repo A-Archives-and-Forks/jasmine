@@ -25,6 +25,8 @@ class InitScreen extends StatefulWidget {
 }
 
 class _InitScreenState extends State<InitScreen> {
+  String? _startupImagePath;
+
   @override
   void initState() {
     super.initState();
@@ -34,19 +36,30 @@ class _InitScreenState extends State<InitScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) {
-          return const Center(
-            child: Text("initializing..."),
-          );
-        },
-      ),
+      body: _startupImagePath != null && _startupImagePath!.isNotEmpty
+          ? Center(
+              child: Image.file(
+                File(_startupImagePath!),
+                fit: BoxFit.contain,
+                width: MediaQuery.of(context).size.width,
+                height: MediaQuery.of(context).size.height,
+              ),
+            )
+          : const Center(
+              child: Text("initializing..."),
+            ),
     );
   }
 
   Future _init() async {
     try {
       await methods.init();
+      final startupImagePath = await methods.getStartupImagePath();
+      if (mounted) {
+        setState(() {
+          _startupImagePath = startupImagePath;
+        });
+      }
       await methods.init2();
       await initConfigs(context);
       debugPrient("STATE : ${loginStatus}");

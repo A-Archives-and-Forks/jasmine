@@ -74,6 +74,18 @@ class Methods {
     return _invoke("load_property", propertyKey);
   }
 
+  Future<String> getStartupImagePath() {
+    return _invoke("get_startup_image_path", "");
+  }
+
+  Future saveStartupImage(String base64Data) {
+    return _invoke("save_startup_image", base64Data);
+  }
+
+  Future deleteStartupImage() {
+    return _invoke("delete_startup_image", "");
+  }
+
   Future<ComicsResponse> comics(String slug, SortBy sortBy, int page) async {
     final rsp = await _invoke("comics", {
       "categories_slug": slug,
