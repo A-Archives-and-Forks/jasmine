@@ -109,10 +109,11 @@ class ComicInfoCard extends StatelessWidget {
                     : Text(comic.author, style: authorStyle),
                 Container(height: 4),
                 _buildCategoryRow(),
-                if (comic.updateAt != null) ...[
+                if (comic.updateAt != null ||
+                    comic.addtime != null) ...[
                   Container(height: 4),
                   Text(
-                    _formatUpdateAt(comic.updateAt!),
+                    _buildTimeText(),
                     style: TextStyle(
                       fontSize: 12,
                       color: Theme.of(context).textTheme.bodySmall?.color,
@@ -222,5 +223,17 @@ class ComicInfoCard extends StatelessWidget {
     final hour = dt.hour.toString().padLeft(2, '0');
     final minute = dt.minute.toString().padLeft(2, '0');
     return "更新: ${dt.year}-$month-$day $hour:$minute";
+  }
+
+  String _buildTimeText() {
+    final parts = <String>[];
+    if (comic.updateAt != null) {
+      parts.add(_formatUpdateAt(comic.updateAt!));
+    }
+    final addtime = comic.addtime;
+    if (addtime != null) {
+      parts.add("发布: ${_formatUpdateAt(addtime).replaceFirst('更新: ', '')}");
+    }
+    return parts.join("  |  ");
   }
 }

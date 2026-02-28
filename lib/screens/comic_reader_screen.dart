@@ -862,7 +862,11 @@ abstract class _ComicReaderState extends State<_ComicReader> {
 
   double _bottomBarHeight() {
     if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
-      return 0;
+      if (widget.readerType == ReaderType.webtoon || widget.readerType == ReaderType.webToonFreeZoom) {
+        if (widget.readerDirection == ReaderDirection.leftToRight || widget.readerDirection == ReaderDirection.rightToLeft) {
+          return 0;
+        }
+      }
     }
     return 45;
   }

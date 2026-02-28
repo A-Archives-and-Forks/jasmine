@@ -42,7 +42,7 @@ class _ComicDownloadScreenState extends State<ComicDownloadScreen> {
       ),
       body: ListView(
         children: [
-          ComicInfoCard(albumToSimple(widget.album), link: true),
+          ComicInfoCard(albumToSimple(widget.album, null), link: true),
           ItemBuilder(
             future: _innerDownloadFuture,
             onRefresh: () async {},

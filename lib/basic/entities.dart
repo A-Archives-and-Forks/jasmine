@@ -30,6 +30,16 @@ const sorts = [
   sortByViewMonth,
 ];
 
+int? _parseIntTimestamp(dynamic value) {
+  if (value == null) {
+    return null;
+  }
+  if (value is int) {
+    return value;
+  }
+  return int.tryParse("$value");
+}
+
 class Page<T> {
   late final List<T> list;
   late final int total;
@@ -253,6 +263,7 @@ class AlbumResponse {
     required this.relatedList,
     required this.liked,
     required this.isFavorite,
+    this.addtime,
   });
 
   late final int id;
@@ -270,6 +281,7 @@ class AlbumResponse {
   late final List<ComicBasic> relatedList;
   late final bool liked;
   late bool isFavorite;
+  late final int? addtime;
 
   AlbumResponse.fromJson(Map<String, dynamic> json) {
     id = json['id'];
@@ -289,6 +301,7 @@ class AlbumResponse {
         .toList();
     liked = json['liked'];
     isFavorite = json['is_favorite'];
+    addtime = _parseIntTimestamp(json['addtime']);
   }
 
   Map<String, dynamic> toJson() {
@@ -308,6 +321,7 @@ class AlbumResponse {
     _data['related_list'] = relatedList.map((e) => e.toJson()).toList();
     _data['liked'] = liked;
     _data['is_favorite'] = isFavorite;
+    _data['addtime'] = addtime;
     return _data;
   }
 }
@@ -346,6 +360,7 @@ class ComicBasic {
     required this.name,
     required this.image,
     this.updateAt,
+    this.addtime,
     this.category,
     this.categorySub,
   });
@@ -356,6 +371,7 @@ class ComicBasic {
   late final String name;
   late final String image;
   late final int? updateAt;
+  late final int? addtime;
   late final ComicSimpleCategory? category;
   late final ComicSimpleCategory? categorySub;
 
@@ -366,6 +382,7 @@ class ComicBasic {
     name = json['name'] ?? "";
     image = json['image'] ?? "";
     updateAt = json['update_at'];
+    addtime = _parseIntTimestamp(json['addtime']);
     category = json['category'] is Map<String, dynamic>
         ? ComicSimpleCategory.fromJson(json['category'])
         : null;
@@ -382,6 +399,7 @@ class ComicBasic {
     _data['name'] = name;
     _data['image'] = image;
     _data['update_at'] = updateAt;
+    _data['addtime'] = addtime;
     _data['category'] = category?.toJson();
     _data['category_sub'] = categorySub?.toJson();
     return _data;
@@ -1280,13 +1298,15 @@ class DlImage {
   }
 }
 
-ComicBasic albumToSimple(AlbumResponse album) {
+ComicBasic albumToSimple(AlbumResponse album, ComicBasic? bk) {
   return ComicBasic(
     id: album.id,
     description: album.description,
     name: album.name,
     author: album.author.join(" / "),
     image: album.images.isEmpty ? '' : album.images[0] ?? '',
+    addtime: album.addtime,
+    updateAt: bk?.updateAt
   );
 }
 

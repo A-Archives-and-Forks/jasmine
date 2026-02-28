@@ -139,7 +139,14 @@ class _ComicInfoScreenState extends State<ComicInfoScreen> with RouteAware {
         shrinkWrap: true,
         children: [
           widget.simple != null
-              ? ComicInfoCard(widget.simple!, link: true)
+              ? FutureBuilder(
+                  future: _albumFuture,
+                  builder: (a, b) {
+                    if (b.connectionState != ConnectionState.done) {
+                      return ComicInfoCard(widget.simple!, link: true);
+                    }
+                    return Container();
+                  })
               : Container(),
           ItemBuilder(
             future: _albumFuture,
@@ -165,7 +172,7 @@ class _ComicInfoScreenState extends State<ComicInfoScreen> with RouteAware {
 
               final _views = [
                 _ComicSerials(
-                  albumToSimple(album),
+                  albumToSimple(album, widget.simple),
                   album,
                   _viewFuture,
                 ),
@@ -177,9 +184,7 @@ class _ComicInfoScreenState extends State<ComicInfoScreen> with RouteAware {
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  widget.simple == null
-                      ? ComicInfoCard(albumToSimple(album), link: true)
-                      : Container(),
+                  ComicInfoCard(albumToSimple(album, widget.simple), link: true),
                   _buildTags(album.tags),
                   ...(album.description.isEmpty
                       ? []
@@ -379,7 +384,9 @@ class _ComicSerialsState extends State<_ComicSerials> {
                 ? Colors.white
                 : Theme.of(context)
                     .textTheme
-                    .bodyMedium?.color?.withOpacity(.17),
+                    .bodyMedium
+                    ?.color
+                    ?.withOpacity(.17),
             child: Text(
               e.sort + (e.name == "" ? "" : (" - ${e.name}")),
             ),
@@ -407,7 +414,9 @@ class _ComicSerialsState extends State<_ComicSerials> {
                 ? Colors.white
                 : Theme.of(context)
                     .textTheme
-                    .bodyMedium?.color?.withOpacity(.17),
+                    .bodyMedium
+                    ?.color
+                    ?.withOpacity(.17),
             child: Text(
               e.sort + (e.name == "" ? "" : (" - ${e.name}")),
             ),
